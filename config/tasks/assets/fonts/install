@@ -1,0 +1,8 @@
+#!/bin/sh
+#MISE description="Install Berkeley Mono from the encrypted font archive"
+#MISE raw=true
+#MISE quiet=true
+set -eu
+
+exec /bin/sh "$HOME/.config/mise/scripts/install-private-cask.sh" \
+	font-berkeley-mono "Berkeley Mono" "$HOME/.config/mise/casks/font-berkeley-mono.rb"

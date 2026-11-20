@@ -1,0 +1,35 @@
+[bootstrap.brew.taps]
+"cloudflare/engineering" = "git@gitlab.cfdata.org:cloudflare/pkg/homebrew.git"
+
+[bootstrap.packages]
+"brew:glab" = "latest"
+"brew:cloudflared" = "latest"
+"brew-cli:cloudflare/engineering/harness-proxy" = "latest"
+
+[bootstrap.directories]
+"~/.ssh/cloudflare" = { mode = "0711" }
+
+[dotfiles]
+"~/.gitconfig/cloudflare" = { block = '''
+[includeIf "hasconfig:remote.*.url:git@*.cfdata.org:*/**"]
+	path = ~/.config/mise/git-cloudflare.config
+[includeIf "hasconfig:remote.*.url:ssh://*.cfdata.org/**"]
+	path = ~/.config/mise/git-cloudflare.config
+[includeIf "hasconfig:remote.*.url:ssh://*@*.cfdata.org/**"]
+	path = ~/.config/mise/git-cloudflare.config
+[includeIf "hasconfig:remote.*.url:ssh://*.cfdata.org:*/**"]
+	path = ~/.config/mise/git-cloudflare.config
+[includeIf "hasconfig:remote.*.url:ssh://*@*.cfdata.org:*/**"]
+	path = ~/.config/mise/git-cloudflare.config
+[includeIf "hasconfig:remote.*.url:https://*.cfdata.org/**"]
+	path = ~/.config/mise/git-cloudflare.config
+[includeIf "hasconfig:remote.*.url:https://*.cfdata.org:*/**"]
+	path = ~/.config/mise/git-cloudflare.config
+''' }
+"~/Library/Application Support/glab-cli/config.yml/default-host" = { source = "glab-defaults.yml", merge = true, permissions = "0600" }
+"~/.ssh/cloudflare/config" = { mode = "track" }
+# Read the include regardless of any preceding Host/Match condition.
+"~/.ssh/config/cloudflare" = { block = '''
+Host *
+	Include ~/.ssh/cloudflare/config
+''' }

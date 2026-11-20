@@ -1,0 +1,443 @@
+[settings.history]
+sync = "manual"
+
+[settings.age]
+key_file = "~/.local/share/mise/private-assets/identity.txt"
+
+[history]
+exclude = [
+    "~/.local/share/mise/private-assets/identity.txt",
+    "/opt/homebrew/Library/Taps/gregbrimble/homebrew-private/**",
+]
+
+[history.encryption]
+recipients = ["age1fc7ev2ppfzndqvm8fk0v6647pnp35quy37vk274zwv0guzh2edps5flrle"]
+
+[bootstrap.directories]
+"~/.config/mise" = { mode = "0711" }
+"~/.ssh" = { mode = "0711" }
+"~/Developer" = {}
+"~/Developer/repos" = {}
+"~/Developer/worktrees" = {}
+"~/Developer/tries" = {}
+"~/Documents/Codex" = {}
+"~/.local/libexec" = {}
+"~/Library/Logs/mise" = {}
+"~/.local/share/private-assets" = { mode = "0700" }
+
+[bootstrap.hooks.pre-packages]
+description = "Set up Device Identity, Command Line Tools for Xcode, and Homebrew"
+run = '''
+set -eu
+
+readonly is_cloudflare={{ vars.is_cloudflare | quote }}
+
+export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
+
+device_identity_ready() (
+	identity_preference=$(/usr/bin/security get-identity-preference -Z \
+		-s 'com.apple.network.eap.user.identity.wlan.ssid.CloudflareX' 2>/dev/null) || return 1
+	identity_hash=$(printf '%s\n' "$identity_preference" | awk '/^SHA-1 hash:/ { print $3 }')
+	[ -n "$identity_hash" ] || return 1
+
+	valid_identities=$(/usr/bin/security find-identity -v -p basic \
+		/Library/Keychains/System.keychain 2>/dev/null) || return 1
+	printf '%s\n' "$valid_identities" | awk -v fingerprint="$identity_hash" '
+		$2 == fingerprint { found = 1 }
+		END { exit !found }
+	'
+)
+
+if [ "$is_cloudflare" = true ]; then
+	if device_identity_ready; then
+		echo "Device Identity: already configured; CloudflareX identity is valid."
+	else
+		echo "Device Identity: setting up network access (complete My Identity sign-in if prompted)..."
+		sudo /usr/local/bin/jamf policy -id 239
+		echo "Device Identity: policy finished."
+	fi
+fi
+
+if xcode-select -p >/dev/null 2>&1; then
+	echo "Command Line Tools for Xcode: already installed."
+else
+	echo "Command Line Tools for Xcode: installing..."
+	touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
+	updates=$(softwareupdate --list)
+	clt_package=$(printf '%s\n' "$updates" | awk '
+		/\*.*Command Line/ {
+			sub(/^[[:space:]]*\*[[:space:]]*(Label:[[:space:]]*)?/, "")
+			package = $0
+		}
+		END { print package }
+	')
+	if [ -z "$clt_package" ]; then
+		echo "Command Line Tools for Xcode: no update found." >&2
+		exit 1
+	fi
+	softwareupdate --install "$clt_package" --verbose
+	xcode-select -p >/dev/null
+	echo "Command Line Tools for Xcode: installed."
+fi
+
+if command -v brew >/dev/null 2>&1; then
+	echo "Homebrew: already installed."
+else
+	echo "Homebrew: installing..."
+	installer=$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)
+	/bin/bash -c "$installer"
+	command -v brew >/dev/null
+	echo "Homebrew: installed."
+fi
+'''
+
+[bootstrap.packages]
+"brew:age" = "latest"
+"brew:gh" = "latest"
+"brew:container" = "latest"
+"brew:zoxide" = "latest"
+"brew:try" = "latest"
+"brew-cask:chatgpt" = "latest"
+"brew-cask:spotify" = "latest"
+"brew-cask:vlc" = "latest"
+"brew-cask:google-chrome" = "latest"
+
+[bootstrap.services.mise-history]
+builtin = "history-watch"
+
+[bootstrap.settings.macos.defaults.NSGlobalDomain]
+AppleInterfaceStyle = "Dark"
+AppleInterfaceStyleSwitchesAutomatically = false
+
+[bootstrap.settings.macos.defaults."com.apple.finder"]
+FXRemoveOldTrashItems = true
+
+[bootstrap.settings.macos.defaults."org.videolan.vlc"]
+SUEnableAutomaticChecks = true
+
+[bootstrap.settings.macos.defaults."com.superlogical.rex"]
+SUAutomaticallyUpdate = true
+SUEnableAutomaticChecks = true
+"Workspace.sidebarPosition" = "left"
+"Workspace.appearance" = "dark"
+"Workspace.usesPaneGlass" = false
+"Workspace.terminalFontName" = "Berkeley Mono"
+
+[bootstrap.macos.launchd.agents.gregd]
+program = "~/.local/libexec/gregd"
+args = [
+    "dev.mise.gregd.downloads-cleanup", "86400",
+    "/bin/sh", "{{ env.HOME }}/.config/mise/scripts/cleanup-downloads.sh",
+    "{{ env.HOME }}/Downloads",
+]
+run_at_load = true
+keep_alive_on_failure = true
+throttle_interval = 300
+process_type = "Background"
+stdout_path = "~/Library/Logs/mise/gregd.log"
+stderr_path = "~/Library/Logs/mise/gregd.log"
+
+[bootstrap.hooks.post-dotfiles]
+description = "Set SSH config permissions and build Greg's daemon"
+run = '''
+set -eu
+chmod 0600 "$HOME/.ssh/config"
+mise run bootstrap:gregd
+'''
+
+[bootstrap.hooks.pre-tools]
+description = "Configure SSH keys and account authentication"
+run = "mise run bootstrap:credentials"
+
+[tasks."bootstrap:credentials"]
+description = "Configure SSH keys and account authentication"
+hide = true
+raw = true
+quiet = true
+run = '''
+set -eu
+
+run_quietly() {
+	if output=$("$@" 2>&1); then
+		return 0
+	else
+		status=$?
+		printf '%s\n' "$output" >&2
+		return "$status"
+	fi
+}
+
+ensure_ssh_key() (
+	readonly private_key="$1"
+	readonly public_key_file="$private_key.pub"
+	readonly email="$2"
+	readonly label="$3"
+
+	if [ -f "$private_key" ]; then
+		if [ ! -e "$public_key_file" ]; then
+			echo "$label SSH key: recovering public key..."
+			public_key=$(ssh-keygen -y -f "$private_key")
+			printf '%s\n' "$public_key" > "$public_key_file"
+		fi
+		ssh-keygen -lf "$public_key_file" >/dev/null
+		ssh-add -q --apple-use-keychain "$private_key"
+		echo "$label SSH key: loaded from existing keypair."
+	elif [ -e "$private_key" ] || [ -L "$private_key" ] || [ -e "$public_key_file" ] || [ -L "$public_key_file" ]; then
+		echo "$label SSH key: incomplete or invalid keypair at $private_key. Check it before continuing." >&2
+		exit 1
+	else
+		echo "$label SSH key: generating..."
+		run_quietly /usr/bin/python3 -B "$HOME/.config/mise/scripts/create-ssh-key.py" \
+			"$private_key" --comment "$email"
+		echo "$label SSH key: generated; passphrase saved and verified in Keychain."
+	fi
+)
+
+export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
+brew_environment=$(brew shellenv sh)
+eval "$brew_environment"
+
+readonly ssh_dir="$HOME/.ssh"
+readonly personal_ssh_private_key="$ssh_dir/id_ed25519"
+readonly personal_ssh_pub_key="$personal_ssh_private_key.pub"
+
+ensure_ssh_key "$personal_ssh_private_key" "developer@gregbrimble.com" "Personal"
+
+if gh auth status >/dev/null 2>&1; then
+	echo "GitHub authentication: ready."
+else
+	echo "GitHub authentication: signing in through your browser..."
+	gh auth login --web --git-protocol ssh --skip-ssh-key \
+		--scopes admin:public_key,admin:ssh_signing_key
+	echo "GitHub authentication: ready."
+fi
+
+readonly machine_name={{ vars.machine_name | quote }}
+
+for key_type in authentication signing; do
+	run_quietly gh ssh-key add "$personal_ssh_pub_key" --type "$key_type" --title "$machine_name"
+	echo "GitHub SSH $key_type key: ready."
+done
+
+if [ "$is_cloudflare" = true ]; then
+	export GITLAB_HOST=gitlab.cfdata.org
+	if glab auth status --hostname "$GITLAB_HOST" >/dev/null 2>&1; then
+		echo "GitLab authentication: ready."
+	else
+		echo "GitLab authentication: signing in through your browser..."
+		glab auth login \
+			--hostname "$GITLAB_HOST" \
+			--web \
+			--api-host "$GITLAB_HOST" \
+			--ssh-hostname "$GITLAB_HOST" \
+			--api-protocol https \
+			--git-protocol ssh \
+			--container-registry-domains "$GITLAB_HOST,$GITLAB_HOST:443,registry.$GITLAB_HOST"
+		echo "GitLab authentication: ready."
+	fi
+
+	readonly cloudflare_ssh_dir="$ssh_dir/cloudflare"
+	readonly ssh_private_key="$cloudflare_ssh_dir/id_ed25519"
+	readonly ssh_pub_key="$ssh_private_key.pub"
+	ensure_ssh_key "$ssh_private_key" "gbrimble@cloudflare.com" "Cloudflare"
+
+	registered_keys=$(glab api --paginate --output ndjson user/keys)
+	registered_keys=$(printf '%s\n' "$registered_keys" | /usr/bin/python3 -c '
+import json
+import sys
+
+for line in sys.stdin:
+    if line.strip():
+        print(json.loads(line)["key"])
+')
+	public_key=$(awk 'NR == 1 { print $1 " " $2 }' "$ssh_pub_key")
+	if printf '%s\n' "$registered_keys" | awk -v key="$public_key" '
+		$1 " " $2 == key { found = 1 }
+		END { exit !found }
+	'; then
+		echo "GitLab SSH key: already registered."
+	else
+		run_quietly glab ssh-key add "$ssh_pub_key" --title "$machine_name"
+		echo "GitLab SSH key: registered."
+	fi
+
+{% if vars.is_cloudflare == "true" %}
+{% set cloudflare = read_toml(path=mise_config_dir ~ "/config.cloudflare.toml") %}
+{% for name, url in cloudflare.bootstrap.brew.taps %}
+	run_quietly brew tap {{ name | quote }} {{ url | quote }}
+{% endfor %}
+	echo "Cloudflare Homebrew taps: ready."
+{% endif %}
+fi
+
+mise run bootstrap:git
+'''
+
+[tasks."bootstrap:git"]
+description = "Configure local Git signing"
+hide = true
+quiet = true
+run = '''
+set -eu
+
+/usr/bin/ssh-keygen -lf "$HOME/.ssh/id_ed25519.pub" >/dev/null
+
+readonly allowed_signers="$HOME/.ssh/git_allowed_signers"
+if [ ! -e "$allowed_signers" ]; then
+	: > "$allowed_signers"
+fi
+
+for public_key_file in "$HOME/.ssh/id_ed25519.pub" "$HOME/.ssh/cloudflare/id_ed25519.pub"; do
+	# Personal machines may not have a Cloudflare key.
+	[ -f "$public_key_file" ] || continue
+	/usr/bin/ssh-keygen -lf "$public_key_file" >/dev/null
+	public_key=$(awk 'NR == 1 { print $1 " " $2 }' "$public_key_file")
+	entry="developer@gregbrimble.com,gbrimble@cloudflare.com $public_key"
+	if ! grep -Fqx "$entry" "$allowed_signers"; then
+		printf '\n%s\n' "$entry" >> "$allowed_signers"
+	fi
+done
+
+# Keep the absolute helper path local; shared settings live in the Git blocks.
+readonly local_config="$HOME/.config/git/machine.config"
+mkdir -p "${local_config%/*}"
+git config --file "$local_config" --replace-all gpg.ssh.program \
+	"$HOME/.config/mise/scripts/git-ssh-sign.sh"
+
+echo "Git: local signing configured."
+'''
+
+[tasks."bootstrap:gregd"]
+description = "Build Greg's daemon"
+hide = true
+quiet = true
+run = '''
+set -eu
+
+readonly source="$HOME/.config/mise/scripts/gregd.m"
+readonly binary="$HOME/.local/libexec/gregd"
+readonly service="gui/$(id -u)/dev.mise.gregd"
+fingerprint=$(/usr/bin/shasum -a 256 "$source")
+
+if [ -x "$binary" ] && [ -f "$binary.sha256" ] && [ "$(cat "$binary.sha256")" = "$fingerprint" ]; then
+	echo "Greg's daemon: already built."
+	exit 0
+fi
+
+temporary=$(mktemp "$binary.XXXXXX")
+readonly temporary
+trap 'rm -f "$temporary"' 0
+/usr/bin/xcrun clang -fobjc-arc -O2 -framework Foundation "$source" -o "$temporary"
+"$temporary" --help >/dev/null
+mv -f "$temporary" "$binary"
+printf '%s\n' "$fingerprint" > "$binary.sha256"
+
+if /bin/launchctl print "$service" >/dev/null 2>&1; then
+	/bin/launchctl kickstart -k "$service"
+fi
+echo "Greg's daemon: built."
+'''
+
+[tasks."bootstrap:spotlight"]
+description = "Exclude development directories from Spotlight searches"
+raw = true
+quiet = true
+run = '''
+set -eu
+
+echo "Spotlight: excluding development directories through Search Privacy..."
+echo "Allow Automation and Accessibility access if prompted; leave System Settings and the keyboard alone."
+/usr/bin/osascript "$HOME/.config/mise/scripts/spotlight.applescript" \
+	"$HOME/Developer" /opt/homebrew "$HOME/Documents/Codex"
+echo "Spotlight: Search Privacy exclusion submitted."
+'''
+
+[tasks."bootstrap:rex"]
+description = "Configure Rex theme and client label"
+hide = true
+quiet = true
+run = '''
+set -eu
+/usr/bin/python3 "$HOME/.config/mise/scripts/configure-rex-theme.py"
+
+readonly machine_name={{ vars.machine_name | quote }}
+if current=$(/usr/bin/defaults read com.superlogical.rex rex.client.label 2>/dev/null) && [ "$current" = "$machine_name" ]; then
+	echo "Rex: client label already configured."
+else
+	/usr/bin/defaults write com.superlogical.rex rex.client.label -string "$machine_name"
+	echo "Rex: client label configured."
+fi
+'''
+
+[tasks.bootstrap]
+description = "Install private apps, configure background services and Spotlight"
+raw = true
+quiet = true
+run = '''
+set -eu
+
+run_quietly() {
+	if output=$("$@" 2>&1); then
+		return 0
+	else
+		status=$?
+		printf '%s\n' "$output" >&2
+		return "$status"
+	fi
+}
+
+export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
+
+mise run assets:rex:install
+mise run assets:fonts:install
+mise run assets:tailwind-plus:update
+mise run bootstrap:rex
+
+if [ "$is_cloudflare" = true ]; then
+	echo "harness-proxy: configuring Codex and background service..."
+	run_quietly harness-proxy setup --codex --service
+	echo "harness-proxy: Codex and background service configured."
+fi
+
+mise run bootstrap:spotlight
+echo "Bootstrap: complete."
+'''
+
+[dotfiles]
+"~/.agents/skills" = { mode = "track" }
+"~/.codex/config.toml/appearance" = { source = "chatgpt-defaults.toml", merge = true, format = "toml" }
+"~/.config/mise" = { mode = "track" }
+"~/.config/mise/private-identity.age" = { mode = "track", allow_plaintext = true } # This is already age ciphertext; explicitly include it despite credential filtering.
+"~/.local/share/private-assets" = { mode = "track", encrypt = true }
+# Clear the work-repository includes when the Cloudflare profile is inactive.
+"~/.gitconfig/cloudflare" = { block = "" }
+"~/.gitconfig/defaults" = { block = '''
+[user]
+	name = Greg Brimble
+	email = developer@gregbrimble.com
+	signingkey = ~/.ssh/id_ed25519.pub
+[gpg]
+	format = ssh
+[gpg "ssh"]
+	allowedSignersFile = ~/.ssh/git_allowed_signers
+[commit]
+	gpgsign = true
+[tag]
+	gpgsign = true
+[push]
+	autoSetupRemote = true
+[include]
+	path = ~/.config/git/machine.config
+''' }
+# Clear the Cloudflare include when bootstrapping without the Cloudflare profile.
+"~/.ssh/config/cloudflare" = { block = "" }
+"~/.ssh/config/defaults" = { block = '''
+Host *
+	AddKeysToAgent yes
+	UseKeychain yes
+''' }
+"~/.ssh/known_hosts" = { mode = "track" }
+"~/.zprofile" = { mode = "track" }
+"~/.zshrc" = { mode = "track" }
+"~/Library/Preferences/org.videolan.vlc/vlcrc/preferences" = { source = "vlc-defaults.ini", merge = true, format = "ini" }
+"~/setup.sh" = { mode = "track" }

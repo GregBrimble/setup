@@ -1,0 +1,4 @@
+[package-manager]
+requires = ["brew"]
+supports_version_pins = false
+os = ["macos"]

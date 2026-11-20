@@ -1,0 +1,3 @@
+interface:
+  display_name: "tobi/try"
+  short_description: "Manage dated experiments with the try CLI"

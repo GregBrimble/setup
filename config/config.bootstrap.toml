@@ -1,0 +1,13 @@
+[env]
+is_cloudflare = "{{ vars.is_cloudflare }}"
+
+[vars.is_cloudflare]
+required = "Run ~/setup.sh or mise -E bootstrap vars prompt is_cloudflare to choose true or false."
+prompt = "Is this a Cloudflare machine? (true/false)"
+
+[vars.machine_name]
+default = """\
+{% if vars.is_cloudflare is defined and vars.is_cloudflare == 'true' %}Cloudflare {% endif %}\
+{{ exec(command='/bin/sh ~/.config/mise/scripts/default-machine-name.sh') }}\
+"""
+prompt = "Machine name (SSH key title)"

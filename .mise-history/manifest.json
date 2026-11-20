@@ -1,0 +1,83 @@
+{
+  "format": 1,
+  "enrollment": [
+    {
+      "path": "config",
+      "autosave": true,
+      "encrypt": false,
+      "variants": []
+    },
+    {
+      "path": "config/private-identity.age",
+      "autosave": true,
+      "encrypt": false,
+      "allow_plaintext": true,
+      "variants": []
+    },
+    {
+      "path": "home/.agents/skills",
+      "autosave": true,
+      "encrypt": false,
+      "variants": []
+    },
+    {
+      "path": "home/.local/share/private-assets",
+      "autosave": true,
+      "encrypt": true,
+      "variants": []
+    },
+    {
+      "path": "home/.ssh/cloudflare/config",
+      "autosave": true,
+      "encrypt": false,
+      "variants": []
+    },
+    {
+      "path": "home/.ssh/known_hosts",
+      "autosave": true,
+      "encrypt": false,
+      "variants": []
+    },
+    {
+      "path": "home/.zprofile",
+      "autosave": true,
+      "encrypt": false,
+      "variants": []
+    },
+    {
+      "path": "home/.zshrc",
+      "autosave": true,
+      "encrypt": false,
+      "variants": []
+    },
+    {
+      "path": "home/setup.sh",
+      "autosave": true,
+      "encrypt": false,
+      "variants": []
+    }
+  ],
+  "exclude": [
+    "~/.local/share/mise/private-assets/identity.txt",
+    "/opt/homebrew/Library/Taps/gregbrimble/homebrew-private/**"
+  ],
+  "recipients": [
+    "age1fc7ev2ppfzndqvm8fk0v6647pnp35quy37vk274zwv0guzh2edps5flrle"
+  ],
+  "permissions": {
+    "config/casks/font-berkeley-mono.rb": 384,
+    "config/private-identity.age": 384,
+    "config/private-recipient.txt": 384,
+    "home/.local/share/private-assets": 448,
+    "home/.local/share/private-assets/casks": 448,
+    "home/.local/share/private-assets/casks/rex.rb": 384,
+    "home/.local/share/private-assets/fonts": 448,
+    "home/.local/share/private-assets/fonts/berkeley-mono.zip": 384,
+    "home/.local/share/private-assets/secrets": 448,
+    "home/.local/share/private-assets/secrets/tailwind-plus.json": 384,
+    "home/.ssh": 457,
+    "home/.ssh/cloudflare": 457,
+    "home/.ssh/cloudflare/config": 384,
+    "home/.ssh/known_hosts": 384
+  }
+}

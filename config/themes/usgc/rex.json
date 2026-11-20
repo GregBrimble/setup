@@ -1,0 +1,171 @@
+{
+  "source": {
+    "manual": {}
+  },
+  "appearance": "dark",
+  "palette": {
+    "selectionBackground": {
+      "red": 0.003804313950240612,
+      "green": 0.020402204245328903,
+      "colorSpace": "display-p3",
+      "blue": 0.484663188457489,
+      "alpha": 1
+    },
+    "background": {
+      "red": 0,
+      "green": 0,
+      "colorSpace": "display-p3",
+      "blue": 0,
+      "alpha": 1
+    },
+    "paletteHarmonious": true,
+    "selectionForeground": {
+      "red": 0.963151752948761,
+      "green": 0.7703509330749512,
+      "colorSpace": "display-p3",
+      "blue": 0.2627224624156952,
+      "alpha": 1
+    },
+    "cursor": {
+      "red": 0.5264509320259094,
+      "green": 0.5538690686225891,
+      "colorSpace": "display-p3",
+      "blue": 0.5868030786514282,
+      "alpha": 1
+    },
+    "ansi": [
+      {
+        "red": 0.149200439453125,
+        "green": 0.149200439453125,
+        "colorSpace": "display-p3",
+        "blue": 0.149200439453125,
+        "alpha": 1
+      },
+      {
+        "red": 0.8039215803146362,
+        "green": 0.01568627543747425,
+        "colorSpace": "display-p3",
+        "blue": 0,
+        "alpha": 1
+      },
+      {
+        "red": 0.963151752948761,
+        "green": 0.7703509330749512,
+        "colorSpace": "display-p3",
+        "blue": 0.2627224624156952,
+        "alpha": 1
+      },
+      {
+        "red": 0.9629350304603577,
+        "green": 0.7687661051750183,
+        "colorSpace": "display-p3",
+        "blue": 0.26227110624313354,
+        "alpha": 1
+      },
+      {
+        "red": 0.41897380352020264,
+        "green": 0.25024348497390747,
+        "colorSpace": "display-p3",
+        "blue": 0.9384227991104126,
+        "alpha": 1
+      },
+      {
+        "red": 0.9187345504760742,
+        "green": 0.2405618131160736,
+        "colorSpace": "display-p3",
+        "blue": 0.5547175407409668,
+        "alpha": 1
+      },
+      {
+        "red": 0.20219826698303223,
+        "green": 0.4659854769706726,
+        "colorSpace": "display-p3",
+        "blue": 0.9659667611122131,
+        "alpha": 1
+      },
+      {
+        "red": 0.9999999403953552,
+        "green": 1,
+        "colorSpace": "display-p3",
+        "blue": 1,
+        "alpha": 1
+      },
+      {
+        "red": 0.28415071964263916,
+        "green": 0.2797691524028778,
+        "colorSpace": "display-p3",
+        "blue": 0.2796786427497864,
+        "alpha": 1
+      },
+      {
+        "red": 0.8039215803146362,
+        "green": 0.01568627543747425,
+        "colorSpace": "display-p3",
+        "blue": 0,
+        "alpha": 1
+      },
+      {
+        "red": 0.9217798113822937,
+        "green": 0.7384904623031616,
+        "colorSpace": "display-p3",
+        "blue": 0.2502690851688385,
+        "alpha": 1
+      },
+      {
+        "red": 0.963151752948761,
+        "green": 0.7703509330749512,
+        "colorSpace": "display-p3",
+        "blue": 0.2627224624156952,
+        "alpha": 1
+      },
+      {
+        "red": 0.9322683215141296,
+        "green": 0.48285311460494995,
+        "colorSpace": "display-p3",
+        "blue": 0.22956129908561707,
+        "alpha": 1
+      },
+      {
+        "red": 0.9187345504760742,
+        "green": 0.2405618131160736,
+        "colorSpace": "display-p3",
+        "blue": 0.5547175407409668,
+        "alpha": 1
+      },
+      {
+        "red": 0.20083585381507874,
+        "green": 0.4632241129875183,
+        "colorSpace": "display-p3",
+        "blue": 0.9658864140510559,
+        "alpha": 1
+      },
+      {
+        "red": 0.9968703389167786,
+        "green": 0.9973946213722229,
+        "colorSpace": "display-p3",
+        "blue": 0.9987017512321472,
+        "alpha": 1
+      }
+    ],
+    "paletteOverrides": {},
+    "cursorText": {
+      "red": 0.9999999403953552,
+      "green": 1,
+      "colorSpace": "display-p3",
+      "blue": 1,
+      "alpha": 1
+    },
+    "paletteBase": {},
+    "foreground": {
+      "red": 0.27067455649375916,
+      "green": 0.6048460602760315,
+      "colorSpace": "display-p3",
+      "blue": 0.3949759006500244,
+      "alpha": 1
+    },
+    "paletteGenerate": true
+  },
+  "createdAt": 816828629.83871,
+  "name": "USGC-RETICLE-IT",
+  "id": "custom-ACE4E29D-BFF1-482E-8238-810E86A4AA0F"
+}

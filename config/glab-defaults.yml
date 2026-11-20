@@ -1,0 +1,10 @@
+host: gitlab.cfdata.org
+hosts:
+  gitlab.cfdata.org:
+    container_registry_domains: gitlab.cfdata.org,gitlab.cfdata.org:443,registry.gitlab.cfdata.org
+    api_host: gitlab.cfdata.org
+    git_protocol: ssh
+    api_protocol: https
+    user: gbrimble
+    client_id: c2955bf4d94cdba86b6124a01fc1e6ac0eb5dcde8ba54490cf544c3aa8568dcc
+    use_keyring: "true"

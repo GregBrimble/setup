@@ -1,0 +1,9 @@
+#!/bin/sh
+#MISE description="Download the latest ZIPs from Tailwind Plus purchases"
+#MISE raw=true
+#MISE quiet=true
+set -eu
+
+mise run private:unlock
+
+exec /usr/bin/python3 "$HOME/.config/mise/scripts/tailwind-plus.py" "$@"

@@ -1,0 +1,6 @@
+#!/bin/sh
+#MISE description="Unlock this Mac's age identity for encrypted dotfiles"
+#MISE raw=true
+#MISE quiet=true
+set -eu
+exec /bin/sh "$HOME/.config/mise/scripts/unlock-private.sh"

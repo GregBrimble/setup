@@ -1,0 +1,7 @@
+#!/bin/sh
+#MISE description="Install Rex from the private Homebrew cask"
+#MISE raw=true
+#MISE quiet=true
+set -eu
+
+exec /bin/sh "$HOME/.config/mise/scripts/install-private-cask.sh" rex "Rex"
